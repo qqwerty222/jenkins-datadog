@@ -3,7 +3,7 @@ variable "image_name" {
     default = null
 }
 
-variable "dockerfile_path" {
+variable "build_context" {
     type    = string
     default = null
 }

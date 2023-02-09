@@ -22,3 +22,13 @@ variable "entrypoint" {
     type    = list
     default = null
 }
+
+variable "internal_port" {
+    type    = number
+    default = null
+}
+
+variable "external_port" {
+    type    = number
+    default = null
+}
