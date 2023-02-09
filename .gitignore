@@ -1,14 +1,16 @@
-venv/
+website/env/
 
-*.pyc
-__pycache__/
+website/*.pyc
+website/__pycache__/
 
-instance/
+website/instance/
 
-.pytest_cache/
-.coverage
-htmlcov/
+website/.pytest_cache/
+website/.coverage
+website/htmlcov/
 
-dist/
-build/
-*.egg-info
+website/dist/
+website/build/
+website/*.egg-info
+
+terraform/live/.terraform
