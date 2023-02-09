@@ -1,16 +1,13 @@
-website/env/
+website/env
 
-website/*.pyc
-website/__pycache__/
+website/flaskr/*.pyc
+website/flaskr/__pycache__
 
 website/instance/
 
+website/tests/__pycache__
 website/.pytest_cache/
 website/.coverage
 website/htmlcov/
-
-website/dist/
-website/build/
-website/*.egg-info
 
 terraform/live/.terraform
