@@ -12,7 +12,8 @@ pipeline {
         }
         stage('Build stage'){
             steps{
-                sh 'echo "null"'
+                sh 'echo $PWD'
             }
         }
     }
+}
