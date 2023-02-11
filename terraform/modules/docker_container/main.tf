@@ -4,8 +4,8 @@ resource "docker_container" "common" {
     name     = var.container_name
     hostname = var.hostname
 
-    tty        = true
-    stdin_open = true
+    tty        = var.tty
+    stdin_open = var.stdin_open
     command    = var.commands
     entrypoint = var.entrypoint
 
