@@ -23,6 +23,16 @@ variable "entrypoint" {
     default = null
 }
 
+variable "tty" {
+    type    = bool
+    default = false
+}
+
+variable "stdin_open" {
+    type    = bool
+    default = false
+}
+
 variable "internal_port" {
     type    = number
     default = null

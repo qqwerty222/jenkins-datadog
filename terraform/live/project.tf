@@ -9,6 +9,7 @@ module "prod_node" {
     entrypoint = [
         "flask", "--app", "flaskr", "run", "-h", "0.0.0.0"
         ]
+
     internal_port = 5000
     external_port = 80
 }
@@ -21,7 +22,7 @@ module "test_node" {
     container_name = "test_node"
     hostname       = "test_node"
 
-
+    entrypoint = [ "python", "-m", "pytest", "tests" ]
 
     internal_port = 5000
     external_port = 81
