@@ -25,7 +25,6 @@ module "test_node" {
     entrypoint = [ "python", "-m", "pytest", "tests" ]
 
     internal_port = 5000
-    external_port = 81
 }
 
 module "python_website" {
