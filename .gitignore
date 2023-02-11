@@ -3,11 +3,11 @@ website/env
 website/flaskr/*.pyc
 website/flaskr/__pycache__
 
-website/instance/
-
 website/tests/__pycache__
 website/.pytest_cache/
 website/.coverage
 website/htmlcov/
 
 terraform/live/.terraform
+terraform/live/terraform.tfstate
+terraform/live/terraform.tfstate.backup

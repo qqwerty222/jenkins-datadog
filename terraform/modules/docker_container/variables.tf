@@ -13,7 +13,7 @@ variable "docker_image" {
     default = null
 }
 
-variable "start_command" {
+variable "commands" {
     type    = list
     default = null
 }

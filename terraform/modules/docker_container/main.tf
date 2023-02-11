@@ -6,19 +6,13 @@ resource "docker_container" "common" {
 
     tty        = true
     stdin_open = true
-    command    = var.start_command
+    command    = var.commands
     entrypoint = var.entrypoint
 
     ports {
       internal = var.internal_port
       external = var.external_port
     }
-    # mounts {
-    #   type   = ""
-      
-    #   source = "../../../website"
-    #   target = "/usr/src/app"
-    # }
 }
 
 
