@@ -13,8 +13,12 @@ resource "docker_container" "common" {
       internal = var.internal_port
       external = var.external_port
     }
-}
 
+    volumes {
+      host_path      = "${path.cwd}/../../website/tests/junit_results.xml"
+      container_path = "/usr/src/app/tests/junit_results.xml"
+    }
+}
 
 #-----config-----#
 terraform {
