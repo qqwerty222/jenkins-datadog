@@ -22,7 +22,7 @@ module "test_node" {
     container_name = "test_node"
     hostname       = "test_node"
 
-    entrypoint = [ "python", "-m", "pytest", "tests" ]
+    entrypoint = [ "python", "-m", "pytest", "--junit-xml=tests/junit_results.xml", "tests" ]
 
     internal_port = 5000
 }
