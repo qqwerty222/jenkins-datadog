@@ -1,18 +1,43 @@
 pipeline {
 
-    agent any
-
-    stages {
-
-        stage('Checkout Codebase'){
+    agent {label 'terraform_docker'}
+    triggers { pollSCM('* * * * *') }
+    stages { 
+        stage('Prepare Codebase'){
             steps{
+                cleanWs()
                 checkout scm: [$class: 'GitSCM', branches: [[name: '*/dev']], userRemoteConfigs: 
                 [[credentialsId: 'ssh-github', url: 'git@github.com:qqwerty222/jenkins-project.git' ]]]
             }
         }
-        stage('Build stage'){
+        stage('Run tests'){
             steps{
-                sh 'echo $PWD'
+                dir('terraform/live') {
+                    sh 'terraform init'
+                    sh 'terraform destroy -target=module.test_node -target=module.python_website -auto-approve'
+                    sh 'terraform apply -target=module.python_website -target=module.test_node -auto-approve'
+                }
+                sleep 10  // container need time to rewrite mounted result.xml
+            }
+        }
+        
+        stage('Get test result') {
+            steps{
+                archiveArtifacts artifacts: 'website/tests/*.xml'
+                junit 'website/tests/*.xml'
+            }
+        }
+            
+        stage('Update website'){
+            steps {
+                dir('terraform/live') {
+                    script {
+                        if (currentBuild.currentResult == "SUCCESS") {
+                            sh 'terraform destroy -target=module.prod_node -auto-approve'
+                            sh 'terraform apply -target=module.prod_node -auto-approve'
+                        }
+                    }
+                }   
             }
         }
     }
