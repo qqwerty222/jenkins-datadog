@@ -12,32 +12,49 @@ pipeline {
         }
         stage('Run tests'){
             steps{
-                dir('terraform/live') {
-                    sh 'terraform init'
-                    sh 'terraform destroy -target=module.test_node -target=module.python_website -auto-approve'
-                    sh 'terraform apply -target=module.python_website -target=module.test_node -auto-approve'
-                }
-                sleep 10  // container need time to rewrite mounted result.xml
+                catchError {
+                    sh "docker build -t website:v${env.BUILD_NUMBER} ."
+                    sh "docker run -i -v ${WORKSPACE}/junit_results.xml:/junit_results.xml website:v${env.BUILD_NUMBER} python -m pytest --junit-xml=/junit_results.xml"
+                } 
+                //sleep 10  // container need time to rewrite mounted result.xml
             }
         }
         
         stage('Get test result') {
             steps{
-                archiveArtifacts artifacts: 'website/tests/*.xml'
-                junit 'website/tests/*.xml'
+                catchError(buildResult: 'FAILURE'){
+                    archiveArtifacts artifacts: 'junit_results.xml'
+                    junit 'junit_results.xml'
+                }
+            }
+        }        
+       
+        stage('Push image'){
+            steps{
+                script {
+                    if (currentBuild.currentResult == "SUCCESS") {
+                        sh "docker image tag website:v${env.BUILD_NUMBER} localhost:5000/website"
+                        sh "docker push localhost:5000/website"
+                    } else {
+                        currentStage.result = "FAILED"
+                    }
+                }
             }
         }
-            
+        
         stage('Update website'){
             steps {
                 dir('terraform/live') {
                     script {
                         if (currentBuild.currentResult == "SUCCESS") {
-                            sh 'terraform destroy -target=module.prod_node -auto-approve'
-                            sh 'terraform apply -target=module.prod_node -auto-approve'
+                            sh 'terraform init'
+                            sh 'terraform destroy -auto-approve'
+                            sh 'terraform apply -auto-approve'
+                        } else {
+                            currentStage.result = "FAILED"
                         }
                     }
-                }   
+                }
             }
         }
     }
