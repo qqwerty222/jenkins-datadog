@@ -26,34 +26,27 @@ pipeline {
                     archiveArtifacts artifacts: 'junit_results.xml'
                     junit 'junit_results.xml'
                 }
+                
+                script {
+                    if (currentBuild.currentResult == "FAILURE")
+                        error 'Pytest failed'
+                }
             }
         }        
        
         stage('Push image'){
             steps{
-                script {
-                    if (currentBuild.currentResult == "SUCCESS") {
-                        sh "docker image tag website:v${env.BUILD_NUMBER} localhost:5000/website"
-                        sh "docker push localhost:5000/website"
-                    } else {
-                        currentStage.result = "FAILED"
-                    }
-                }
+                sh "docker image tag website:v${env.BUILD_NUMBER} localhost:5000/website"
+                sh "docker push localhost:5000/website"
             }
         }
         
         stage('Update website'){
             steps {
                 dir('terraform/live') {
-                    script {
-                        if (currentBuild.currentResult == "SUCCESS") {
-                            sh 'terraform init'
-                            sh 'terraform destroy -auto-approve'
-                            sh 'terraform apply -auto-approve'
-                        } else {
-                            currentStage.result = "FAILED"
-                        }
-                    }
+                    sh 'terraform init'
+                    sh 'terraform destroy -auto-approve'
+                    sh 'terraform apply -auto-approve'
                 }
             }
         }
