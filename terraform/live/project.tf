@@ -14,22 +14,7 @@ module "prod_node" {
     external_port = 80
 }
 
-module "test_node" {
-    source = "../modules/docker_container"
-
-    docker_image   = module.python_website.image_id
-
-    container_name = "test_node"
-    hostname       = "test_node"
-
-    entrypoint = [ "python", "-m", "pytest", "--junit-xml=tests/junit_results.xml", "tests" ]
-
-    internal_port = 5000
-}
-
 module "python_website" {
     source = "../modules/docker_images"
-    
-    image_name    = "python-website"
-    build_context = "../../"
+    image_name = "localhost:5000/website"
 }
