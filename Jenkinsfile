@@ -10,13 +10,13 @@ pipeline {
                 [[credentialsId: 'ssh-github', url: 'git@github.com:qqwerty222/jenkins-project.git' ]]]
             }
         }
+        
         stage('Run tests'){
             steps{
                 catchError {
                     sh "docker build -t website:v${env.BUILD_NUMBER} ."
                     sh "docker run -i -v ${WORKSPACE}/junit_results.xml:/junit_results.xml website:v${env.BUILD_NUMBER} python -m pytest --junit-xml=/junit_results.xml"
                 } 
-                //sleep 10  // container need time to rewrite mounted result.xml
             }
         }
         
