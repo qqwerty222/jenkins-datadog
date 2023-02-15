@@ -9,9 +9,9 @@ module "website_node" {
     internal_port = 8000
     external_port = 80
 
-    host_path      = "${path.cwd}../../website/log/access.log"
+    host_path      = "${path.cwd}/../../website/log/access.log"
     container_path = "/usr/src/app/log/access.log"
-    
+
     entrypoint = [
         "gunicorn",  
             "--bind",           "0.0.0.0:8000", 
