@@ -8,11 +8,6 @@ variable "container_name" {
     default = null
 }
 
-variable "hostname" {
-    type    = string
-    default = null
-}
-
 variable "commands" {
     type    = list
     default = null
@@ -28,9 +23,19 @@ variable "tty" {
     default = false
 }
 
+variable "attach" {
+    type    = bool
+    default = false
+}
+
 variable "stdin_open" {
     type    = bool
     default = false
+}
+
+variable "host" {
+    type    = list
+    default = null
 }
 
 variable "ports" {
