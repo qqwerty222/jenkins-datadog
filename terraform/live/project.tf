@@ -37,6 +37,8 @@ module "website_node" {
             "--access-logfile", "log/access.log",
         "wsgi:app"
     ]
+
+    depends_on = [ module.website_net ]
 }
 
 module "nginx_node" {
@@ -60,6 +62,8 @@ module "nginx_node" {
         ["/srv/website_logs/nginx/access.log", "/var/log/nginx/access.log"],
         ["/srv/website_logs/nginx/error.log",  "/var/log/nginx/error.log"]
     ]
+
+    depends_on = [ module.website_net ]
 }
 
 module "website_image" {
