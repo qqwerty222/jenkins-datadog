@@ -43,6 +43,12 @@ pipeline {
         
         stage('Update website'){
             steps {
+                // left label in logs, to understand by what build they were created
+                sh "echo '#-----build${env.BUILD_NUMBER}-----#' >> /srv/website_logs/gunicorn/access.log"
+                sh "echo '#-----build${env.BUILD_NUMBER}-----#' >> /srv/website_logs/gunicorn/error.log"
+                sh "echo '#-----build${env.BUILD_NUMBER}-----#' >> /srv/website_logs/nginx/access.log"
+                sh "echo '#-----build${env.BUILD_NUMBER}-----#' >> /srv/website_logs/nginx/error.log"
+
                 dir('terraform/live') {
                     sh 'terraform init'
                     sh 'terraform destroy -auto-approve'
