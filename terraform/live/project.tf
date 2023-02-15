@@ -32,7 +32,7 @@ module "nginx_node" {
     docker_image   = module.nginx_image.id
     container_name = "nginx_node"
 
-    host  = [ ["website", "172.17.0.4"] ]
+    host  = [ ["nginx", "172.17.0.4"] ]
     
     ports = [
         # [ internal, external]
@@ -42,7 +42,7 @@ module "nginx_node" {
     volumes = [
         # [ "/host_path", "/container_path"]
         ["${path.cwd}/../../nginx.conf", "/etc/nginx/nginx.conf"],
-        
+
     ]
 }
 
