@@ -3,6 +3,7 @@ website/env
 website/flaskr/*.pyc
 website/flaskr/__pycache__
 
+website/__pycache__/
 website/tests/__pycache__
 website/.pytest_cache/
 website/.coverage

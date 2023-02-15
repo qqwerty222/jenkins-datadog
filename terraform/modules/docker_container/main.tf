@@ -13,6 +13,11 @@ resource "docker_container" "common" {
       internal = var.internal_port
       external = var.external_port
     }
+
+    volumes {
+      host_path      = var.host_path
+      container_path = var.container_path
+    }
 }
 
 #-----config-----#

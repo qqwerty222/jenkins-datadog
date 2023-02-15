@@ -42,3 +42,13 @@ variable "external_port" {
     type    = number
     default = null
 }
+
+variable "host_path" {
+    type    = string
+    default = null
+}
+
+variable "container_path" {
+    type    = string
+    default = null
+}
