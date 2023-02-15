@@ -6,11 +6,16 @@ module "website_node" {
     container_name = "website_node"
     hostname       = "website"
 
-    internal_port = 8000
-    external_port = 80
+    volumes = [ 
+        # [ "/host_path", "/container_path"]
+        ["${path.cwd}/../../website/log/access.log", "/usr/src/app/log/access.log"],
+        ["${path.cwd}/../../website/log/error.log",  "/usr/src/app/log/error.log"]
+    ]
 
-    host_path      = "${path.cwd}/../../website/log/access.log"
-    container_path = "/usr/src/app/log/access.log"
+    ports = [
+        # [ internal, external]
+        [8000, 80]
+    ]
 
     entrypoint = [
         "gunicorn",  
@@ -18,7 +23,7 @@ module "website_node" {
             "--error-logfile",  "log/error.log",
             "--access-logfile", "log/access.log",
         "wsgi:app"
-        ]
+    ]
 }
 
 # module "nginx_node" {

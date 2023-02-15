@@ -9,14 +9,20 @@ resource "docker_container" "common" {
     command    = var.commands
     entrypoint = var.entrypoint
 
-    ports {
-      internal = var.internal_port
-      external = var.external_port
+    dynamic "ports" {
+      for_each = var.ports
+      content {
+        internal = ports.value[0]
+        external = ports.value[1]
+      }
     }
 
-    volumes {
-      host_path      = var.host_path
-      container_path = var.container_path
+    dynamic "volumes" {
+      for_each = var.volumes
+      content {
+        host_path      = volumes.value[0]
+        container_path = volumes.value[1]
+      }
     }
 }
 
