@@ -13,8 +13,8 @@ module "website_node" {
 
     volumes = [ 
         # [ "/host_path", "/container_path"]
-        ["${path.cwd}/../../log/gunicorn/access.log", "/usr/src/app/log/access.log"],
-        ["${path.cwd}/../../log/gunicorn/error.log",  "/usr/src/app/log/error.log"]
+        ["/srv/website_logs/gunicorn/access.log", "/usr/src/app/log/access.log"],
+        ["/srv/website_logs/gunicorn/error.log",  "/usr/src/app/log/error.log"]
     ]
 
     entrypoint = [
@@ -42,8 +42,8 @@ module "nginx_node" {
     volumes = [
         # [ "/host_path", "/container_path"]
         ["${path.cwd}/../../nginx.conf", "/etc/nginx/nginx.conf"],
-        ["${path.cwd}/../../log/nginx/access.log", "/var/log/nginx/access.log"],
-        ["${path.cwd}/../../log/nginx/error.log",  "/var/log/nginx/error.log"]
+        ["/srv/website_logs/nginx/access.log", "/var/log/nginx/access.log"],
+        ["/srv/website_logs/nginx/error.log",  "/var/log/nginx/error.log"]
     ]
 }
 
