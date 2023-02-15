@@ -9,11 +9,14 @@ resource "docker_container" "common" {
     command    = var.commands
     entrypoint = var.entrypoint
 
-    dynamic "host" {
-      for_each = var.host
+    # network      = var.network_name
+    # ipv4_address = var.ipv4_address
+
+    dynamic "networks_advanced" {
+      for_each = var.networks
       content {
-        host = host.value[0]
-        ip   = host.value[1]
+        name         = networks_advanced.value[0]
+        ipv4_address = networks_advanced.value[1]
       }
     }
 

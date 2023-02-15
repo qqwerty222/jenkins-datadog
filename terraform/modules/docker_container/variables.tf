@@ -33,7 +33,7 @@ variable "stdin_open" {
     default = false
 }
 
-variable "host" {
+variable "networks" {
     type    = list
     default = null
 }

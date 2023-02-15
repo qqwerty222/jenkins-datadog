@@ -1,10 +1,23 @@
+module "website_net" {
+    source = "../modules/docker_network"
+
+    network_name = "website_net"
+
+    ipam_config = [ 
+        # [ subnet, ip_range, gateway ]
+        [ "172.1.0.0/16", "172.1.1.0/24", "172.1.1.254"]
+    ]
+}
+
 module "website_node" {
     source = "../modules/docker_container"
     
     docker_image   = module.website_image.id
     container_name = "website_node"
 
-    host = [ ["website", "172.17.0.3"] ]
+    networks = [
+        ["website_net", "172.1.1.10"]
+    ]
 
     ports = [
         # [ internal, external]
@@ -31,9 +44,11 @@ module "nginx_node" {
 
     docker_image   = module.nginx_image.id
     container_name = "nginx_node"
-
-    host  = [ ["nginx", "172.17.0.4"] ]
     
+    networks = [
+        ["website_net", "172.1.1.15"]
+    ]
+
     ports = [
         # [ internal, external]
         [80, 80]
