@@ -3,7 +3,7 @@ module "website_net" {
 
     network_name = "website_net"
 
-    ipam_config = [ 
+    ipam_config  = [ 
         # [ subnet, ip_range, gateway ]
         [ "172.1.0.0/16", "172.1.1.0/24", "172.1.1.254"]
     ]
@@ -12,25 +12,24 @@ module "website_net" {
 module "website_node" {
     source = "../modules/docker_container"
     
-    docker_image   = module.website_image.id
-    container_name = "website_node"
+    container_names = ["website_node1", "website_node2", "website_node3"]
+    docker_image    = module.website_image.id
 
-    networks = [
-        ["website_net", "172.1.1.10"]
-    ]
+    network_name    = "website_net"
+    ipv4_address    = ["172.1.1.10", "172.1.1.11", "172.1.1.12"]
 
-    ports = [
+    ports       = [
         # [ internal, external]
         [8000, null]
     ]
 
-    volumes = [ 
+    volumes     = [ 
         # [ "/host_path", "/container_path"]
         ["/srv/website_logs/gunicorn/access.log", "/usr/src/app/log/access.log"],
         ["/srv/website_logs/gunicorn/error.log",  "/usr/src/app/log/error.log"]
     ]
 
-    entrypoint = [
+    entrypoint  = [
         "gunicorn",  
             "--bind",           "0.0.0.0:8000", 
             "--error-logfile",  "log/error.log",
@@ -38,18 +37,17 @@ module "website_node" {
         "wsgi:app"
     ]
 
-    depends_on = [ module.website_net ]
+    depends_on  = [ module.website_net ]
 }
 
 module "nginx_node" {
     source = "../modules/docker_container"
 
     docker_image   = module.nginx_image.id
-    container_name = "nginx_node"
+    container_names = ["nginx_node"]
     
-    networks = [
-        ["website_net", "172.1.1.15"]
-    ]
+    network_name    = "website_net"
+    ipv4_address    = ["172.1.1.15"]
 
     ports = [
         # [ internal, external]

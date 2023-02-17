@@ -3,8 +3,8 @@ variable "docker_image" {
     default = null
 }
 
-variable "container_name" {
-    type    = string
+variable "container_names" {
+    type    = list
     default = null
 }
 
@@ -33,7 +33,12 @@ variable "stdin_open" {
     default = false
 }
 
-variable "networks" {
+variable "network_name" {
+    type    = string
+    default = null
+}
+
+variable "ipv4_address" {
     type    = list
     default = null
 }
