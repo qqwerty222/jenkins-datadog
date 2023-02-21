@@ -2,8 +2,8 @@ variable "name" {
     type    = string
     default = null
 }
-
-variable "dashboards" {
+variable "dashboard_list" {
     type    = list
     default = null
 }
+

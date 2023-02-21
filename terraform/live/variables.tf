@@ -8,3 +8,8 @@ variable "datadog_app_key" {
     sensitive = true
 }
 
+variable "api_url" {
+    type    = string
+    default = null
+}
+

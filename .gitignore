@@ -12,5 +12,6 @@ website/htmlcov/
 terraform/live/.terraform
 terraform/live/terraform.tfstate
 terraform/live/terraform.tfstate.backup
+terraform/live/.terraform.lock.hcl
 
 terraform/live/secret.auto.tfvars
