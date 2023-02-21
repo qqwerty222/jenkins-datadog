@@ -21,7 +21,7 @@ provider "datadog" {
     alias   = "ddog"
 
     api_url = "https://app.datadoghq.eu"
-    api_key = var.datadog_api_key
-    app_key = var.datadog_app_key
+    # api_key = var.datadog_api_key
+    # app_key = var.datadog_app_key
 }
 
