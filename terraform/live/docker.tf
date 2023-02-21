@@ -67,7 +67,7 @@ module "nginx_node" {
 module "website_image" {
     source = "../modules/docker_images"
     
-    image_name = "localhost:5000/website"
+    image_name = "localhost:5005/website"
 }
 
 module "nginx_image" {
