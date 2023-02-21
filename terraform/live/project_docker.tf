@@ -1,5 +1,5 @@
 module "website_net" {
-    source = "../modules/docker_network"
+    source = "../modules/docker/docker_network"
 
     network_name = "website_net"
 
@@ -10,7 +10,7 @@ module "website_net" {
 }
 
 module "website_node" {
-    source = "../modules/docker_container"
+    source = "../modules/docker/docker_container"
     
     container_names = ["website_node1", "website_node2", "website_node3"]
     docker_image    = module.website_image.id
@@ -41,7 +41,7 @@ module "website_node" {
 }
 
 module "nginx_node" {
-    source = "../modules/docker_container"
+    source = "../modules/docker/docker_container"
 
     docker_image   = module.nginx_image.id
     container_names = ["nginx_node"]
@@ -65,13 +65,13 @@ module "nginx_node" {
 }
 
 module "website_image" {
-    source = "../modules/docker_images"
+    source = "../modules/docker/docker_images"
     
     image_name = "localhost:5005/website"
 }
 
 module "nginx_image" {
-    source = "../modules/docker_images"
+    source = "../modules/docker/docker_images"
 
     image_name   = "nginx:1.22"
     keep_locally = true
