@@ -1,35 +1,42 @@
-variable "title" {
+variable "dashboard_title" {
     type    = string
     default = "default"
 }
 
-variable "description" {
+variable "dashboard_description" {
     type    = string
     default = "Created using Terraform"
 }
 
-variable "layout_type" {
+variable "dashboard_layout_type" {
     type    = string
     default = "ordered" 
 }
 
-variable "is_read_only" {
+variable "dashboard_is_read_only" {
     type    = bool
     default = false
 }
 
-variable "request" {
-    type        = string
-    default     = null
-    description = "query, exmp: 'avg:container.cpu.usage{container_name:website_node1} by {container_name}'"
+variable "timeseries_title" {
+    type    = string
+    default = null
 }
 
-variable "display_type" {
-    type        = string
-    default     = "area"
-    description = "lines, area, bars"
+variable "timeseries_live_span" {
+    type    = string
+    default = "1h"
 }
 
+variable "timeseries_requests" {
+    type    = list(map(string))
+    default = null
+}
+
+variable "timeseries_event" {
+    type    = list
+    default = [ "tags:terraform" ] 
+}
 variable "style_params" {
     type        = map
     default     = {
@@ -38,6 +45,8 @@ variable "style_params" {
         line_width  = "normal"
     }
 }
+
+
 
 
 
