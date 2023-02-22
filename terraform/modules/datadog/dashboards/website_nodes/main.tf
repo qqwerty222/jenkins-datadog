@@ -4,37 +4,41 @@ resource "datadog_dashboard" "website_nodes" {
   description  = var.dashboard_description
   layout_type  = var.dashboard_layout_type
 
-  widget {
-    timeseries_definition {
-      title       = var.timeseries_title
-      show_legend = true
-      legend_size = "auto"
-      live_span   = var.timeseries_live_span
+  dynamic "widget" {
+    for_each = var.timeseries_widgets
+    content {
+      timeseries_definition {
+          title       = widget.value["title"]
+          show_legend = widget.value["show_legend"]
+          legend_size = widget.value["legend_size"]
+          live_span   = widget.value["live_span"]
 
-      request {
-        dynamic "query" {
-          for_each = var.timeseries_requests
-          content {
-            metric_query {
-                name  = query.value["name"]
-                query = query.value["query"]
+          request {
+            dynamic "query" {
+              for_each = widget.value["timeseries_requests"]
+              content {
+                metric_query {
+                    name  = query.value["name"]
+                    query = query.value["query"]
+                }
+              }
             }
           }
-        }
-      }
 
-      dynamic "event" {
-        for_each = var.timeseries_event
-        content {
-          q = event.value
-        } 
-      }
+          dynamic "event" {
+            for_each = widget.value["timeseries_events"]
+            content {
+              q = event.value
+            } 
+          }
 
-      # yaxis {
-      #   scale        = "linear"
-      #   include_zero = true
-      #   # max          = 1000
-      # }
+          yaxis {
+            scale        = "linear"
+            include_zero = true
+            # max          = 1000
+          }
+         
+      }
     }
   }
 }

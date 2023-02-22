@@ -28,24 +28,28 @@ variable "timeseries_live_span" {
     default = "1h"
 }
 
-variable "timeseries_requests" {
-    type    = list(map(string))
-    default = null
-}
+variable "timeseries_widgets" {
+    type = list(object({
+        title       = string,
+        show_legend = bool,
+        legend_size = string,
+        live_span   = string,
 
-variable "timeseries_event" {
-    type    = list
-    default = [ "tags:terraform" ] 
-}
-variable "style_params" {
-    type        = map
-    default     = {
-        palette     = "dog_classic"
-        line_type   = "solid"
-        line_width  = "normal"
-    }
-}
+        timeseries_requests = list(map(string)),
+        timeseries_events    = list(string)
+    }))
+    default = [
+        {
+            title       = null,
+            show_legend = null,
+            legend_size = "auto",
+            live_span   = "4h",
 
+            timeseries_requests = [],
+            timeseries_events    = ["tags:terraform"]
+        }
+    ]
+}
 
 
 
