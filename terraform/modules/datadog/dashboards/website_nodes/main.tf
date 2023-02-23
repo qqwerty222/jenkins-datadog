@@ -1,5 +1,5 @@
 resource "datadog_dashboard" "website_nodes" {
-    
+
   title        = var.dashboard_title
   description  = var.dashboard_description
   layout_type  = var.dashboard_layout_type
@@ -38,6 +38,40 @@ resource "datadog_dashboard" "website_nodes" {
             # max          = 1000
           }
          
+      }
+    }
+  }
+
+  dynamic "widget" {
+    for_each = var.piechart_widgets
+    content {
+      sunburst_definition {
+        title         = widget.value["title"]
+        live_span     = widget.value["live_span"]
+
+        # legend_table {
+        #   type         = "table"
+        # }
+        
+        request {
+          formula {
+            formula_expression = widget.value["formula_expression"]
+            limit {
+              order = "desc"
+            }
+          }
+
+          dynamic "query" {
+            for_each = widget.value["piechart_requests"]
+            content {
+              metric_query {
+                name  = query.value["name"]
+                query = query.value["query"]
+                aggregator = "sum"
+              }  
+            }
+          }
+        }
       }
     }
   }

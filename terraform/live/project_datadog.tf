@@ -15,9 +15,31 @@ module "website_nodes_dashboard" {
     dashboard_title       = "Website nodes"
     dashboard_description = "Created by Terraform"
     
+    piechart_widgets   = [
+        {
+            title     = "All container CPU Usage"
+            live_span = "4h"
+            formula_expression = "query1"
+
+            piechart_requests = [
+                { name = "query1", query = "avg:container.cpu.usage{container_name:*} by {container_name}" }
+            ]
+        },
+
+        {
+            title     = "Web container CPU Usage"
+            live_span = "4h"
+            formula_expression = "web_nodes"
+
+            piechart_requests = [
+                { name = "web_nodes", query = "avg:container.cpu.usage{container_name:website_node*} by {container_name}" }
+            ]
+        }
+    ]
+
     timeseries_widgets = [
         {
-            title       = "Widget 1",
+            title       = "Web containers CPU Usage",
             legend_size = "auto",
             show_legend = true,
             live_span   = "4h",
@@ -32,18 +54,29 @@ module "website_nodes_dashboard" {
         },
 
         {
-            title       = "Widget 2",
-            legend_size = "auto",
+            title       = "Nginx CPU Usage",
             show_legend = true,
-            live_span   = "4h",
+            legend_size = "auto",
+            live_span   = "1h",
 
             timeseries_requests   = [
-                { name = "web_cont_3", query = "avg:container.cpu.usage{container_name:website_node3} by {container_name}" },
-                { name = "web_conf_2", query = "avg:container.cpu.usage{container_name:website_node2} by {container_name}" },
-                { name = "web_conf_1", query = "avg:container.cpu.usage{container_name:website_node1} by {container_name}" }
+                { name = "dockerhost", query = "avg:container.cpu.system{container_name:nginx_node}" }
             ],
 
-            timeseries_events    = ["tags:terraform2"]
+            timeseries_events    = ["tags:terraform", "tags:nginx"]
+        },
+
+        {
+            title       = "DockerHost CPU Usage",
+            show_legend = true,
+            legend_size = "auto",
+            live_span   = "1h",
+
+            timeseries_requests   = [
+                { name = "dockerhost", query = "avg:system.cpu.system{host:dockerhost}" }
+            ],
+
+            timeseries_events    = ["tags:terraform", "tags:nginx"]
         }
     ]
 

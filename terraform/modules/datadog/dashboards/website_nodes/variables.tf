@@ -36,7 +36,7 @@ variable "timeseries_widgets" {
         live_span   = string,
 
         timeseries_requests = list(map(string)),
-        timeseries_events    = list(string)
+        timeseries_events   = list(string)
     }))
     default = [
         {
@@ -46,10 +46,31 @@ variable "timeseries_widgets" {
             live_span   = "4h",
 
             timeseries_requests = [],
-            timeseries_events    = ["tags:terraform"]
+            timeseries_events   = ["tags:terraform"]
         }
     ]
 }
+
+variable "piechart_widgets" {
+    type = list(object({
+        title     = string, 
+        live_span = string,
+
+        formula_expression = string 
+        piechart_requests  = list(map(string)),
+    }))
+    default = [
+        { 
+            title     = "Pie Chart"
+            live_span = "4h"
+
+            formula_expression = "query1"
+            piechart_requests  = []
+        }
+    ]
+}
+
+
 
 
 

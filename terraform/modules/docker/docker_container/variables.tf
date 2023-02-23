@@ -33,6 +33,11 @@ variable "stdin_open" {
     default = false
 }
 
+variable "env_vars" {
+    type    = set(string) 
+    default = null
+}
+
 variable "network_name" {
     type    = string
     default = null
@@ -45,10 +50,10 @@ variable "ipv4_address" {
 
 variable "ports" {
     type    = list
-    default = null
+    default = []
 }
 
 variable "volumes" {
     type    = list
-    default = null
+    default = []
 }

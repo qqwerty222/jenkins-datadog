@@ -1,10 +1,10 @@
-variable "datadog_api_key" {
+variable "DATADOG_API_KEY" {
     type      = string
     default   = null
     sensitive = true
 }
 
-variable "datadog_app_key" {
+variable "DATADOG_APP_KEY" {
     type      = string
     default   = null
     sensitive = true

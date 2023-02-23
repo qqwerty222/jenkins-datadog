@@ -9,6 +9,7 @@ resource "docker_container" "common" {
     stdin_open = var.stdin_open
     command    = var.commands
     entrypoint = var.entrypoint
+    env        = var.env_vars
 
     networks_advanced {
         name         = var.network_name
@@ -20,6 +21,7 @@ resource "docker_container" "common" {
       content {
         internal = ports.value[0]
         external = ports.value[1]
+        # protocol = ports.value[2]
       }
     }
 
@@ -28,6 +30,7 @@ resource "docker_container" "common" {
       content {
         host_path      = volumes.value[0]
         container_path = volumes.value[1]
+        read_only      = try(volumes.value[2], false)
       }
     }
 }
