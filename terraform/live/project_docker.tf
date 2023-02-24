@@ -46,7 +46,6 @@ module "website_node" {
     depends_on  = [ module.website_net ]
 }
 
-
 module "nginx_image" {
     source = "../modules/docker/docker_images"
 
@@ -81,8 +80,10 @@ module "nginx_node" {
 module "datadog_image" {
     source = "../modules/docker/docker_images"
 
-    image_name   = "gcr.io/datadoghq/agent:7"
-    keep_locally = true
+    image_name   = "datadog"
+    build = [{ context = "../modules/datadog", tag=["dd:test"] }]
+    
+    keep_locally = false
 }
 
 module "datadog_node" {
@@ -104,7 +105,7 @@ module "datadog_node" {
         # [ "/host_path", "/container_path", "read_only(default:false)" ]
         ["/var/run/docker.sock", "/var/run/docker.sock", true],
         ["/sys/fs/cgroup/", "/host/sys/fs/cgroup", true],
-        ["/proc/", "/host/proc/", true]
+        ["/proc/", "/host/proc/", true],
     ]   
 }
 
