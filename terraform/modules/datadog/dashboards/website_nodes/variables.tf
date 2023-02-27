@@ -30,22 +30,22 @@ variable "timeseries_live_span" {
 
 variable "timeseries_widgets" {
     type = list(object({
-        title       = string,
-        show_legend = bool,
-        legend_size = string,
-        live_span   = string,
+        title       = string
+        show_legend = bool
+        legend_size = string
+        live_span   = string
 
-        timeseries_requests = list(map(string)),
+        timeseries_requests = list(map(string))
         timeseries_events   = list(string)
     }))
     default = [
         {
-            title       = null,
-            show_legend = null,
-            legend_size = "auto",
-            live_span   = "4h",
+            title       = null
+            show_legend = null
+            legend_size = "auto"
+            live_span   = "4h"
 
-            timeseries_requests = [],
+            timeseries_requests = []
             timeseries_events   = ["tags:terraform"]
         }
     ]
