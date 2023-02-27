@@ -17,66 +17,64 @@ module "website_nodes_dashboard" {
     
     piechart_widgets   = [
         {
-            title     = "All container CPU Usage"
-            live_span = "4h"
-            formula_expression = "query1"
+            title = "All container CPU Usage"
 
-            piechart_requests = [
-                { name = "query1", query = "avg:container.cpu.usage{container_name:*} by {container_name}" }
-            ]
+                live_span          = "4h"
+                formula_expression = "query1"
+                piechart_requests  = [
+                    { name = "query1", query = "avg:container.cpu.usage{container_name:*} by {container_name}" }
+                ]
         },
 
         {
-            title     = "Web container CPU Usage"
-            live_span = "4h"
-            formula_expression = "web_nodes"
+            title = "Web container CPU Usage"
 
-            piechart_requests = [
-                { name = "web_nodes", query = "avg:container.cpu.usage{container_name:website_node*} by {container_name}" }
-            ]
+                live_span          = "4h"
+                formula_expression = "web_nodes"
+                piechart_requests  = [
+                    { name = "web_nodes", query = "avg:container.cpu.usage{container_name:website_node*} by {container_name}" }
+                ]
         }
     ]
 
     timeseries_widgets = [
         {
-            title       = "Web containers CPU Usage",
-            legend_size = "auto",
-            show_legend = true,
-            live_span   = "4h",
+            title = "Web containers CPU Usage"
 
-            timeseries_requests   = [
-                { name = "web_cont_1", query = "avg:container.cpu.usage{container_name:website_node1} by {container_name}" },
-                { name = "web_conf_2", query = "avg:container.cpu.usage{container_name:website_node2} by {container_name}" },
-                { name = "web_conf_3", query = "avg:container.cpu.usage{container_name:website_node3} by {container_name}" }
-            ],
+                legend_size         = "auto"
+                show_legend         = true
+                live_span           = "4h"
 
-            timeseries_events    = ["tags:terraform"]
+                timeseries_requests = [
+                    { name = "web_cont_1", query = "avg:container.cpu.usage{container_name:website_node1} by {container_name}" },
+                    { name = "web_conf_2", query = "avg:container.cpu.usage{container_name:website_node2} by {container_name}" },
+                    { name = "web_conf_3", query = "avg:container.cpu.usage{container_name:website_node3} by {container_name}" },
+                ],
+                timeseries_events = ["tags:terraform"]
         },
 
         {
-            title       = "Nginx CPU Usage",
-            show_legend = true,
-            legend_size = "auto",
-            live_span   = "1h",
+            title = "Nginx CPU Usage"
 
-            timeseries_requests   = [
-                { name = "dockerhost", query = "avg:container.cpu.system{container_name:nginx_node}" }
-            ],
-
-            timeseries_events    = ["tags:terraform", "tags:nginx"]
+                show_legend         = true
+                legend_size         = "auto"
+                live_span           = "1h"
+                timeseries_requests = [
+                    { name = "dockerhost", query = "avg:container.cpu.system{container_name:nginx_node}" },
+                ]
+                timeseries_events   = ["tags:terraform", "tags:nginx"]
         },
 
         {
-            title       = "DockerHost CPU Usage",
-            show_legend = true,
-            legend_size = "auto",
-            live_span   = "1h",
+            title = "DockerHost CPU Usage"
 
-            timeseries_requests   = [
-                { name = "dockerhost", query = "avg:system.cpu.system{host:dockerhost}" }
-            ],
-
-            timeseries_events    = ["tags:terraform", "tags:nginx"]
+                show_legend           = true
+                legend_size           = "auto"
+                live_span             = "1h"
+                timeseries_requests   = [
+                    { name = "dockerhost", query = "avg:system.cpu.system{host:dockerhost}" },
+                ]
+                timeseries_events    = ["tags:terraform", "tags:nginx"]
         }
     ]
 
@@ -84,6 +82,49 @@ module "website_nodes_dashboard" {
         datadog = datadog.ddog
     }
 }
+
+module "monitor" {
+    source   = "../modules/datadog/monitors"
+
+    monitors = [
+        {
+            mon_name = "Website availability"
+            
+                mon_type           = "metric alert"
+                alert_message      = "Monitor triggered. Notify: @example-group"
+                escalation_message = "Escalation message @pagerduty"
+
+                query              = "avg(last_5m):(avg:custom.website_node1.availability{*} + avg:custom.website_node2.availability{*} + avg:custom.website_node3.availability{*}) / 3 < 30"
+
+                warning_threshold  = 70
+                critical_threshold = 30
+                
+                include_tags       = true
+                tags               = [ "created:terraform" ]
+        }, 
+
+        {
+            mon_name = "Test 2"
+            
+                mon_type           = "metric alert"
+                alert_message      = "Monitor triggered. Notify: @example-group"
+                escalation_message = "Escalation message @pagerduty"
+
+                query              = "avg(last_5m):(avg:custom.website_node1.availability{*} + avg:custom.website_node2.availability{*} + avg:custom.website_node3.availability{*}) / 3 < 30"
+
+                warning_threshold  = 70
+                critical_threshold = 30
+                
+                include_tags       = true
+                tags               = [ "created:terraform" ]
+        },   
+    ]
+
+    providers   = {
+        datadog = datadog.ddog
+    }
+}
+
 
 
 
