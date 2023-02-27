@@ -75,4 +75,20 @@ resource "datadog_dashboard" "website_nodes" {
       }
     }
   }
+
+  dynamic "widget" {
+    for_each = var.summary_widgets
+    content {
+      manage_status_definition {
+        title = widget.value["title"]
+
+        summary_type     = widget.value["summary_type"]
+        display_format   = widget.value["display_format"]
+        color_preference = widget.value["color_preference"]
+        sort             = widget.value["sort"]
+
+        query = widget.value["query"]  
+      }
+    }
+  }
 }

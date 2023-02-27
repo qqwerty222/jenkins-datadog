@@ -10,11 +10,12 @@ module "dashboard_list" {
 }
 
 module "website_nodes_dashboard" {
-    source = "../modules/datadog/dashboards/website_nodes"
+    source = "../modules/datadog/dashboards/dashboard_resource"
 
     dashboard_title       = "Website nodes"
     dashboard_description = "Created by Terraform"
-    
+    dashboard_layout_type = "ordered"
+
     piechart_widgets   = [
         {
             title = "All container CPU Usage"
@@ -78,6 +79,19 @@ module "website_nodes_dashboard" {
         }
     ]
 
+    summary_widgets = [
+        {
+            title = "Monitor Summary"
+                
+                summary_type     = "monitors"
+                display_format   = "countsAndList"
+                color_preference = "background" 
+                sort             = "status"
+
+                query = "tag:(created:terraform)"
+        }
+    ]
+
     providers   = {
         datadog = datadog.ddog
     }
@@ -108,7 +122,4 @@ module "monitor" {
         datadog = datadog.ddog
     }
 }
-
-
-
 

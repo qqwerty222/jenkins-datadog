@@ -70,6 +70,30 @@ variable "piechart_widgets" {
     ]
 }
 
+variable "summary_widgets" {
+    type = list(object({
+        title = string
+            summary_type     = string
+            display_format   = string
+            color_preference = string
+            sort             = string
+
+            query            = string
+    }))
+
+    default = [
+        {   
+            title = null
+                summary_type     = "monitors"
+                display_format   = "list"
+                color_preference = "background"
+                sort             = "status"
+
+                query = null
+        }
+    ]
+}
+
 
 
 
