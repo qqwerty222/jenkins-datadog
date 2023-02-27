@@ -101,23 +101,7 @@ module "monitor" {
                 
                 include_tags       = true
                 tags               = [ "created:terraform" ]
-        }, 
-
-        {
-            mon_name = "Test 2"
-            
-                mon_type           = "metric alert"
-                alert_message      = "Monitor triggered. Notify: @example-group"
-                escalation_message = "Escalation message @pagerduty"
-
-                query              = "avg(last_5m):(avg:custom.website_node1.availability{*} + avg:custom.website_node2.availability{*} + avg:custom.website_node3.availability{*}) / 3 < 30"
-
-                warning_threshold  = 70
-                critical_threshold = 30
-                
-                include_tags       = true
-                tags               = [ "created:terraform" ]
-        },   
+        },  
     ]
 
     providers   = {
