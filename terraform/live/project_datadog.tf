@@ -35,7 +35,7 @@ module "website_nodes_dashboard" {
                 piechart_requests  = [
                     { name = "web_nodes", query = "avg:container.cpu.usage{container_name:website_node*} by {container_name}" }
                 ]
-        }
+        },
     ]
 
     timeseries_widgets = [
@@ -76,7 +76,7 @@ module "website_nodes_dashboard" {
                     { name = "dockerhost", query = "avg:system.cpu.system{host:dockerhost}" },
                 ]
                 timeseries_events    = ["tags:terraform", "tags:nginx"]
-        }
+        },
     ]
 
     summary_widgets = [
@@ -89,7 +89,7 @@ module "website_nodes_dashboard" {
                 sort             = "status"
 
                 query = "tag:(created:terraform)"
-        }
+        },
     ]
 
     providers   = {
