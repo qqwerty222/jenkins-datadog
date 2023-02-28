@@ -59,7 +59,7 @@ module "website_node" {
         "wsgi:app"
     ]
 
-    depends_on = ["website_net"]
+    depends_on = [ module.website_net ]
 }
 
 module "nginx_node" {
@@ -82,7 +82,7 @@ module "nginx_node" {
         ["/srv/website_logs/nginx/error.log",  "/var/log/nginx/error.log"]
     ]
 
-    depends_on = ["website_net"]
+    depends_on = [ module.website_net ]
 }
 
 module "datadog_node" {
@@ -111,6 +111,6 @@ module "datadog_node" {
         "DD_TAGS= env:dev "
     ]  
 
-    depends_on = ["website_net"]
+    depends_on = [ module.website_net ]
 }
 
