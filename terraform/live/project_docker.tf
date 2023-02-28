@@ -69,7 +69,7 @@ module "nginx_node" {
 
     volumes = [
         # [ "/host_path", "/container_path" ]
-        ["${path.cwd}/../../nginx.conf", "/etc/nginx/nginx.conf"],
+        ["${path.cwd}/conf/nginx.conf", "/etc/nginx/nginx.conf"],
         ["/srv/website_logs/nginx/access.log", "/var/log/nginx/access.log"],
         ["/srv/website_logs/nginx/error.log",  "/var/log/nginx/error.log"]
     ]

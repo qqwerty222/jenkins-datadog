@@ -1,0 +1,10 @@
+env
+
+flaskr/*.pyc
+flaskr/__pycache__
+
+__pycache__/
+tests/__pycache__
+.pytest_cache/
+.coverage
+htmlcov/
