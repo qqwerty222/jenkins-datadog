@@ -1,4 +1,5 @@
 variable "monitors" {
+    description = "List of objects that contain parameters of monitor"
     type = list(object({
         mon_name           = string
         mon_type           = string

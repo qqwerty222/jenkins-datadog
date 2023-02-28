@@ -1,8 +1,8 @@
 resource "docker_container" "common" {
-    count = length(var.container_names)
+    count      = length(var.container_names)
 
-    name = element(var.container_names, count.index)
-    image    = var.docker_image
+    name       = element(var.container_names, count.index)
+    image      = var.docker_image
 
     tty        = var.tty
     attach     = var.attach 

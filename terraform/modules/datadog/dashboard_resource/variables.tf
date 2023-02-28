@@ -11,6 +11,7 @@ variable "dashboard_description" {
 variable "dashboard_layout_type" {
     type    = string
     default = "ordered" 
+    description = "Also can be 'free', but you need to specify size and position of each widget"
 }
 
 variable "dashboard_is_read_only" {
@@ -18,17 +19,9 @@ variable "dashboard_is_read_only" {
     default = false
 }
 
-variable "timeseries_title" {
-    type    = string
-    default = null
-}
-
-variable "timeseries_live_span" {
-    type    = string
-    default = "1h"
-}
-
 variable "timeseries_widgets" {
+    
+    description = "List of objects that contain parameters of timeseries widget"
     type = list(object({
         title       = string
         show_legend = bool
@@ -52,6 +45,8 @@ variable "timeseries_widgets" {
 }
 
 variable "piechart_widgets" {
+    
+    description = "List of objects that contain parameters of piechart widget"
     type = list(object({
         title     = string, 
         live_span = string,
@@ -71,6 +66,8 @@ variable "piechart_widgets" {
 }
 
 variable "summary_widgets" {
+    
+    description = "List of objects that contain parameters of summary widget"
     type = list(object({
         title = string
             summary_type     = string
@@ -80,7 +77,6 @@ variable "summary_widgets" {
 
             query            = string
     }))
-
     default = [
         {   
             title = null
@@ -92,6 +88,7 @@ variable "summary_widgets" {
                 query = null
         }
     ]
+
 }
 
 
