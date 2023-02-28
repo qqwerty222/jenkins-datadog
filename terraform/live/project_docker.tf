@@ -75,9 +75,15 @@ module "nginx_node" {
     }
     ports   = [ [80, 80] ]
 
+    upload  = [[ "/etc/nginx/nginx.conf", 
+                templatefile("conf/nginx_conf.tpl", {
+                    website_addresses = module.website_node.ipv4_addresses
+                })
+    ]]
+
     volumes = [
         # [ "/host_path", "/container_path" ]
-        ["${path.cwd}/conf/nginx.conf", "/etc/nginx/nginx.conf"],
+        # ["${path.cwd}/conf/nginx.conf", "/etc/nginx/nginx.conf"],
         ["/srv/website_logs/nginx/access.log", "/var/log/nginx/access.log"],
         ["/srv/website_logs/nginx/error.log",  "/var/log/nginx/error.log"]
     ]

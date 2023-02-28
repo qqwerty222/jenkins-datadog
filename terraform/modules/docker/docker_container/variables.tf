@@ -68,6 +68,12 @@ variable "ports" {
     description = "Internal/External ports to expose | [ 22, 2222 ]"
 }
 
+variable "upload" {
+    type    = list
+    default = []
+    description = "File to upload before start of the container | [ '/container_path', 'content_of_the_file' ]"
+}
+
 variable "volumes" {
     type        = list
     default     = []

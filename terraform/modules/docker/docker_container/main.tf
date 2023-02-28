@@ -25,6 +25,14 @@ resource "docker_container" "common" {
       }
     }
 
+    dynamic "upload" {
+      for_each = var.upload
+      content {
+        file    = upload.value[0]
+        content = upload.value[1]
+      }
+    }
+
     dynamic "volumes" {
       for_each = var.volumes
       content {
