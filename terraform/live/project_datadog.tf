@@ -10,7 +10,7 @@ module "dashboard_list" {
 }
 
 module "website_nodes_dashboard" {
-    source = "../modules/datadog/dashboards/dashboard_resource"
+    source = "../modules/datadog/dashboard_resource"
 
     dashboard_title       = "Website nodes"
     dashboard_description = "Created by Terraform"
