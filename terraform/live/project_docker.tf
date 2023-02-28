@@ -15,12 +15,28 @@ module "website_image" {
     image_name = "localhost:5005/website"
 }
 
+module "nginx_image" {
+    source = "../modules/docker/docker_images"
+
+    image_name   = "nginx:1.22"
+    keep_locally = true
+}
+
+module "datadog_image" {
+    source = "../modules/docker/docker_images"
+
+    image_name   = "datadog"
+    build        = [{ context = "../modules/datadog", tag=["dd:test"] }]
+    
+    keep_locally = false
+}
+
 module "website_node" {
     source = "../modules/docker/docker_container"
     
     name            = "website_node"
     docker_image    = module.website_image.id
-    container_count = 5
+    container_count = 3
     
     network = { 
         name        = "website_net", 
@@ -42,13 +58,8 @@ module "website_node" {
             "--access-logfile", "log/access.log",
         "wsgi:app"
     ]
-}
 
-module "nginx_image" {
-    source = "../modules/docker/docker_images"
-
-    image_name   = "nginx:1.22"
-    keep_locally = true
+    depends_on = ["website_net"]
 }
 
 module "nginx_node" {
@@ -70,15 +81,8 @@ module "nginx_node" {
         ["/srv/website_logs/nginx/access.log", "/var/log/nginx/access.log"],
         ["/srv/website_logs/nginx/error.log",  "/var/log/nginx/error.log"]
     ]
-}
 
-module "datadog_image" {
-    source = "../modules/docker/docker_images"
-
-    image_name   = "datadog"
-    build        = [{ context = "../modules/datadog", tag=["dd:test"] }]
-    
-    keep_locally = false
+    depends_on = ["website_net"]
 }
 
 module "datadog_node" {
@@ -106,5 +110,7 @@ module "datadog_node" {
         "DD_SITE=datadoghq.eu",
         "DD_TAGS= env:dev "
     ]  
+
+    depends_on = ["website_net"]
 }
 
