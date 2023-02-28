@@ -4,10 +4,16 @@ variable "docker_image" {
     description = "Docker image id"
 }
 
-variable "container_names" {
-    type        = list
-    default     = null
-    description = "List of container names, equal to container count"
+variable "container_count" {
+    type        = number
+    default     = 1
+    description = "Number of conteiners to create"
+}
+
+variable "name" {
+    type        = string
+    default     = "container"
+    description = "Base container name, using count next will be name1, name2, name3 etc."
 }
 
 variable "commands" {
@@ -46,16 +52,14 @@ variable "env_vars" {
     description = " | ['key=value', 'key=value'] "
 }
 
-variable "network_name" {
-    type        = string
-    default     = null
-    description = "Name of the network to connect"
-}
-
-variable "ipv4_address" {
-    type        = list
-    default     = null
-    description = "Set ipv4 address, only custom networks"
+variable "network" {
+    type = object({
+        name            = string
+        subnet          = string
+        start_from      = number
+    })
+    default = null
+    description = "Set custom network | network = { name='net_1', ipv4_subnet='1.1.1.', ip_started_from='10' }"
 }
 
 variable "ports" {

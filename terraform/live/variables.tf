@@ -12,6 +12,12 @@ variable "DATADOG_APP_KEY" {
     description = "Set as env var, to use datadog"
 }
 
+variable "WEBSITE_NODE_COUNT" {
+    type        = number
+    default     = null
+    description = "Set as env var, count of website node containers"
+}
+
 variable "api_url" {
     type        = string
     default     = null

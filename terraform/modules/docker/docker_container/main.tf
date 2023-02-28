@@ -1,7 +1,7 @@
 resource "docker_container" "common" {
-    count      = length(var.container_names)
+    count     = var.container_count
 
-    name       = element(var.container_names, count.index)
+    name       = "${var.name}${count.index + 1}"
     image      = var.docker_image
 
     tty        = var.tty
@@ -12,8 +12,8 @@ resource "docker_container" "common" {
     env        = var.env_vars
 
     networks_advanced {
-        name         = var.network_name
-        ipv4_address = element(var.ipv4_address, count.index)
+        name         = var.network["name"]
+        ipv4_address = "${var.network["subnet"]}${var.network["start_from"] + count.index}"
     }
 
     dynamic "ports" {
