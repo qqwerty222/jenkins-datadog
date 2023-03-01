@@ -47,9 +47,12 @@ module "website_nodes_dashboard" {
                 live_span           = "4h"
 
                 timeseries_requests = [
-                    { name = "web_cont_1", query = "avg:container.cpu.usage{container_name:website_node1} by {container_name}" },
-                    { name = "web_conf_2", query = "avg:container.cpu.usage{container_name:website_node2} by {container_name}" },
-                    { name = "web_conf_3", query = "avg:container.cpu.usage{container_name:website_node3} by {container_name}" },
+                    for name in module.website_node.container_names: 
+                        { name = "web_cont${index(module.website_node.container_names, name) + 1}",  query = "avg:container.cpu.usage{container_name:${name}} by {container_name}"}
+
+                    # { name = "web_cont_1", query = "avg:container.cpu.usage{container_name:website_node1} by {container_name}" },
+                    # { name = "web_conf_2", query = "avg:container.cpu.usage{container_name:website_node2} by {container_name}" },
+                    # { name = "web_conf_3", query = "avg:container.cpu.usage{container_name:website_node3} by {container_name}" },
                 ],
                 timeseries_events = ["tags:terraform"]
         },

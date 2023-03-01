@@ -1,4 +1,4 @@
-resource "datadog_dashboard" "website_nodes" {
+resource "datadog_dashboard" "common" {
 
   title        = var.dashboard_title
   description  = var.dashboard_description
@@ -18,7 +18,7 @@ resource "datadog_dashboard" "website_nodes" {
               for_each = widget.value["timeseries_requests"]
               content {
                 metric_query {
-                    name  = query.value["name"]
+                    name  = query.value["name"] 
                     query = query.value["query"]
                 }
               }
