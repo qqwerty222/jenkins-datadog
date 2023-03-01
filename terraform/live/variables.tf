@@ -14,7 +14,7 @@ variable "DATADOG_APP_KEY" {
 
 variable "WEBSITE_NODE_COUNT" {
     type        = number
-    default     = null
+    default     = 3
     description = "Set as env var, count of website node containers"
 }
 

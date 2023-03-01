@@ -36,7 +36,7 @@ module "website_node" {
     
     name            = "website_node"
     docker_image    = module.website_image.id
-    container_count = 5
+    container_count = var.WEBSITE_NODE_COUNT
     
     network = { 
         name        = "website_net", 
