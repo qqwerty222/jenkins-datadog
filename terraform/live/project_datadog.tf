@@ -64,7 +64,10 @@ module "website_nodes_dashboard" {
                 legend_size         = "auto"
                 live_span           = "1h"
                 timeseries_requests = [
-                    { name = "dockerhost", query = "avg:container.cpu.system{container_name:nginx_node}" },
+                    for name in module.nginx_node.container_names: 
+                        { name = "ngx_cont${index(module.nginx_node.container_names, name) + 1}",  query = "avg:container.cpu.usage{container_name:${name}} by {container_name}"}
+                    
+                    # { name = "dockerhost", query = "avg:container.cpu.system{container_name:nginx_node1}" },
                 ]
                 timeseries_events   = ["tags:terraform", "tags:nginx"]
         },
@@ -105,13 +108,14 @@ module "monitor" {
 
     monitors = [
         {
-            mon_name = "Website availability"
+            mon_name = "Website availability (dev)"
             
                 mon_type           = "metric alert"
                 alert_message      = "Monitor triggered. Notify: @example-group"
                 escalation_message = "Escalation message @pagerduty"
 
-                query              = "avg(last_5m):(avg:custom.website_node1.availability{*} + avg:custom.website_node2.availability{*} + avg:custom.website_node3.availability{*}) / 3 < 30"
+                query              = "avg(last_5m):(%{ for name in module.website_node.container_names} + avg:custom.${name}.availability{*} %{ endfor } ) / 3 < 30 "
+                                   # "avg(last_5m):(avg:custom.website_node1.availability{*} + avg:custom.website_node2.availability{*} + avg:custom.website_node3.availability{*}) / 3 < 30"
 
                 warning_threshold  = 70
                 critical_threshold = 30
