@@ -108,7 +108,7 @@ module "monitor" {
 
     monitors = [
         {
-            mon_name = "Website availability (dev)"
+            mon_name = "Website availability"
             
                 mon_type           = "metric alert"
                 alert_message      = "Monitor triggered. Notify: @example-group"
