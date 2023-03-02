@@ -49,7 +49,7 @@
   1. Nginx configuration
 
 - Jenkins
-    1. Create and set up Pipeline
+    1. Set up Pipeline job
     2. Jenkinsfile
 
 ***
