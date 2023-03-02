@@ -1,16 +1,20 @@
 from checks import AgentCheck
 import subprocess
+import os 
 
 class NginxCheck(AgentCheck):
     def check(self, instance):
 
+        website_node_count = int(os.environ['WEBSITE_COUNT'])
+        # website container ip range starts from 172.1.1.10 and last number in [-] included
+        ip_range = f"[10-{website_node_count + 9}]"
 
-        all_headers = subprocess.run(["curl -I 'http://172.1.1.[10-12]:8000'"], shell=True, capture_output=True, text=True).stdout
+        all_headers = subprocess.run([f"curl -I 'http://172.1.1.{ip_range}:8000'"], shell=True, capture_output=True, text=True).stdout
         each_headers = all_headers.split("--_curl_--")
 
         status_common = []
 
-        for rows in each_headers[1:4]:
+        for rows in each_headers[1:website_node_count + 1]:
             status_header = (rows.split("\n"))[1]
             try: 
                 status_code = (status_header.split(" "))[1] 
@@ -22,7 +26,5 @@ class NginxCheck(AgentCheck):
             else:
                 status_common.append(0)
 
-        self.gauge('custom.website_node1.availability', status_common[0])
-        self.gauge('custom.website_node2.availability', status_common[1])
-        self.gauge('custom.website_node3.availability', status_common[2])
-        self.gauge('custom.website.availability', (sum(status_common)/len(status_common)))
+        for index, status in enumerate(status_common):
+            self.gauge(f'custom.website_node{index + 1}.availability', status)

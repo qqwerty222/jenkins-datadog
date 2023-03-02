@@ -111,10 +111,11 @@ module "datadog_node" {
     ]  
 
     env_vars        = [
+        "WEBSITE_COUNT=${var.WEBSITE_NODE_COUNT}",
         "DD_API_KEY=${var.DATADOG_API_KEY}",
         "DD_HOSTNAME=docker_agent",
         "DD_SITE=datadoghq.eu",
-        "DD_TAGS= env:dev "
+        "DD_TAGS=env:dev "
     ]  
 
     depends_on = [ module.website_net ]
