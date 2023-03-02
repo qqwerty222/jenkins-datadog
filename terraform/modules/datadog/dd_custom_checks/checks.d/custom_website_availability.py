@@ -12,7 +12,7 @@ class NginxCheck(AgentCheck):
         ip_range = f"[10-{website_node_count + 9}]"
 
         # get output from curl -I on each of conteiners
-        out, err, retcode = get_subprocess_output(["curl", "-I", f"'http://172.1.1.{ip_range}:8000'"], self.log, raise_on_empty_output=True)
+        out, err, retcode = get_subprocess_output(["curl", "-I", f"http://172.1.1.{ip_range}:8000"], self.log, raise_on_empty_output=True)
         
         # add output for each container in list
         each_headers = out.split("--_curl_--")
