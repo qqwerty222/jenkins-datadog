@@ -56,7 +56,7 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
 
 ## NAT network configuration
 NAT network means that VirtualBox creates dedicated network for your VMs, but with your host as gateway.  
-To redirect ssh to one of VMs use set up port forwarding for your NAT network
+To redirect ssh connections to one of VMs set up port forwarding in your NAT network
 
 ### Port forwarding scheme
 | Name            | Protocol   | Host IP | Host Port | Guest IP  | Guest Port |
@@ -104,7 +104,7 @@ To ssh inside NAT network from one VM to another you can use internal ip address
 ## Set up ssh key authentication
 There is 2 types of ssh-keys public and private  
 Public key is used by target machine to authorize user  
-Private key is used by user to connect on target machine
+Private key is used by user to connect to target machine  
 List of authorized public keys is stored in /home/user/.ssh/authorized_keys file  
 
 - Generate ssh-key 
