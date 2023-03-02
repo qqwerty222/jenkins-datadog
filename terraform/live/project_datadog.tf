@@ -54,7 +54,7 @@ module "website_nodes_dashboard" {
                     # { name = "web_conf_2", query = "avg:container.cpu.usage{container_name:website_node2} by {container_name}" },
                     # { name = "web_conf_3", query = "avg:container.cpu.usage{container_name:website_node3} by {container_name}" },
                 ],
-                timeseries_events = ["tags:terraform"]
+                timeseries_events = ["tags:terraform", "tags:web_containers"]
         },
 
         {
@@ -80,6 +80,18 @@ module "website_nodes_dashboard" {
                 live_span             = "1h"
                 timeseries_requests   = [
                     { name = "dockerhost", query = "avg:system.cpu.system{host:dockerhost}" },
+                ]
+                timeseries_events    = ["tags:terraform"]
+        },
+
+        {
+            title = "Nginx AVG response time"
+
+                show_legend           = true
+                live_span             = "1h"
+                legend_size           = "auto"
+                timeseries_requests   = [
+                    { name = "dockerhost", query = "avg:custom.nginx.ping.avg{host:dockerhost}" },
                 ]
                 timeseries_events    = ["tags:terraform", "tags:nginx"]
         },
@@ -121,7 +133,7 @@ module "monitor" {
                 critical_threshold = 30
                 
                 include_tags       = true
-                tags               = [ "created:terraform" ]
+                tags               = [ "created:terraform", "tags:web_containers" ]
         },  
     ]
 
