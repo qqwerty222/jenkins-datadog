@@ -126,7 +126,7 @@ module "monitor" {
                 alert_message      = "Monitor triggered. Notify: @example-group"
                 escalation_message = "Escalation message @pagerduty"
 
-                query              = "avg(last_5m):(%{ for name in module.website_node.container_names} + avg:custom.${name}.availability{*} %{ endfor } ) / 3 < 30 "
+                query              = "avg(last_5m):(%{ for name in module.website_node.container_names} + avg:custom.${name}.availability{*} %{ endfor } ) / ${var.WEBSITE_NODE_COUNT} < 30 "
                                    # "avg(last_5m):(avg:custom.website_node1.availability{*} + avg:custom.website_node2.availability{*} + avg:custom.website_node3.availability{*}) / 3 < 30"
 
                 warning_threshold  = 70
