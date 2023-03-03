@@ -1,12 +1,12 @@
 # Project Description
 ***
 ## Task:
---- 
+
 Implement CI/CD pipeline, to test, deploy and monitor some application
 
 *** 
 ## Main Tools:
----
+
 - Docker
 - Jenkins
 - Datadog
@@ -14,7 +14,7 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
 
 *** 
 ## Configuration:
----
+
 - Host       - Windows 10
 - Hypervisor - VirtualBox 7.0
 - Dockerhost - (VM) Ubuntu Server 22.04 (10.0.2.15)
@@ -23,7 +23,7 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
 
 *** 
 ## Steps to reproduce:
----
+
 -  Prepare environment:
    1. Set up NAT network in VirtualBox 
    2. SSH into Virtual Machines
@@ -71,7 +71,7 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
 
 ***
 ## Set up NAT network in VirtualBox 
----  
+
 
 NAT network means that VirtualBox creates dedicated network for your VMs, but with your host as gateway.  
 To redirect ssh connections to one of VMs set up port forwarding in your NAT network
@@ -124,7 +124,7 @@ To ssh inside NAT network from one VM to another you can use internal ip address
 
 ***  
 ## Generate and use ssh-keys
----
+
 There is 2 types of ssh-keys public and private  
 Public key is used by target machine to authorize user  
 Private key is used by user to connect to target machine  
@@ -162,7 +162,7 @@ In current project you need to create ssh-keys for:
 
 ***
 ## Configure Dockerhost
----
+
 To prepare Dockerhost for work you need to install Docker, create user for Jenkins and directories to store terraform state and website logs
 
 ### Install Docker 
@@ -270,7 +270,7 @@ https://docs.docker.com/engine/install/ubuntu/
    ```
 ***
 ## Configure Jenkins Server
----
+
 To prepare jenkins server you need to install Jenkins and terraform, set up ssh connection to dockerhost and configure Jenkins
 
 ### Install Jenkins
