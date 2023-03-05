@@ -41,6 +41,7 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
    2. SSH to jenkins user on Dockerhost
    3. Log in and configure Jenkins
    4. Connect Dockerhost as Jenkins node 
+   5. Create jenkins pipeline
    ---
   
 - Terraform for Docker
@@ -203,9 +204,15 @@ https://docs.docker.com/engine/install/ubuntu/
   ...
   ```
 
-- Add yourself to docker group to be able run it without sudo
+- Add yourself to docker group to be able run it without sudo, and relogin to apply changes
   ```bash
   bohdan@dockerhost:~$ sudo usermod -aG docker bohdan
+  bohdan@dockerhost:~$ su $USER
+  ```
+
+- Also install java, because jenkins will run Dockerhost as agent
+  ```bash
+  bohdan@dockerhost:~$ sudo apt install openjdk-11-jre
   ```
 
 ### Run docker registry
@@ -218,6 +225,36 @@ https://docs.docker.com/engine/install/ubuntu/
   bohdan@dockerhost:~$ docker ps
    CONTAINER ID   IMAGE        COMMAND                  CREATED         STATUS         PORTS                                       
    8624b0e36d23   registry:2   "/entrypoint.sh /etc…"   5 seconds ago   Up 4 seconds   0.0.0.0:5005->5000/tcp
+
+### Install terraform
+---
+Official guide you can find here:
+https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
+
+- Install required packages
+  ```bash
+  bohdan@dockerhost:~$ sudo apt-get update
+  bohdan@dockerhost:~$ sudo apt-get install gnupg software-properties-common
+  ```
+
+- Add HashiCorp gpg key
+  ```bash
+  bohdan@dockerhost:~$ wget -O- https://apt.releases.hashicorp.com/gpg | \
+    gpg --dearmor | \
+    sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  ```
+
+- Create entry to local repo list
+  ```bash
+  bohdan@dockerhost:~$ echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+      https://apt.releases.hashicorp.com $(lsb_release -cs) main" |     sudo tee /etc/apt/sources.list.d/hashicorp.list
+  ```
+
+- Install terraform
+  ```bash
+  bohdan@dockerhost:~$ sudo apt update
+  bohdan@dockerhost:~$ sudo apt-get install terraform
+  ```
 
 ### Create Jenkins user
 ---
@@ -250,7 +287,7 @@ https://docs.docker.com/engine/install/ubuntu/
    jenkins@dockerhost:/root$ touch /home/jenkins/.ssh/authorized_keys
    ```
 
-- Also you need to gen and add public ssh-key into /home/jenkins/.ssh/authorized-keys (you can not log in using pass, only ssh-key)  
+- Also you will need to gen and add public ssh-key into /home/jenkins/.ssh/authorized-keys (you can not log in using pass, only ssh-key)  
 
 ### Prepare directories for website logs and terraform state
 ---
@@ -265,8 +302,11 @@ https://docs.docker.com/engine/install/ubuntu/
   ```bash
    bohdan@dockerhost:~$ sudo mkdir /srv/website_logs
    bohdan@dockerhost:~$ sudo chmod o+rw /srv/website_logs
-   bohdan@dockerhost:~$ mkdir /srv/website_logs/gunicorn
-   bohdan@dockerhost:~$ mkdir /srv/website_logs/nginx
+   # change to jenkins user
+   bohdan@dockerhost:~$ sudo -i
+   root@dockerhost:~# su jenkins
+   jenkins@dockerhost:$ mkdir /srv/website_logs/nginx
+   jenkins@dockerhost:$ mkdir /srv/website_logs/gunicorn 
    ```
 ***
 ## Configure Jenkins Server
@@ -335,19 +375,40 @@ Don't forget to map port 8080 to Host, it is where Jenkins UI working
 
 - Temporarly send it to home dir of bohdan user, and add into authorized_keys of jenkins user
   ```bash
-   bohdan@jenkins:~$ scp /home/bohdan/.ssh/dockerhost-ssh.pub bohdan@10.0.2.15:/home/bohdan/dockerhost-ssh
+   bohdan@jenkins:~$ scp /home/bohdan/.ssh/dockerhost-ssh.pub bohdan@10.0.2.15:/home/bohdan/dockerhost-ssh.pub
    # ssh into dockerhost
    bohdan@dockerhost:~$ sudo -i
-   root@dockerhost:~$ cat /home/bohdan/dockerhost-ssh >> /home/jenkins/.ssh/authorized_keys
+   root@dockerhost:~$ cat /home/bohdan/dockerhost-ssh.pub >> /home/jenkins/.ssh/authorized_keys
    ```
 
 - SSH into jenkins user on Dockerhost
   ```bash
    bohdan@jenkins:~$ ssh -i /home/bohdan/.ssh/dockerhost-ssh jenkins@10.0.2.15
    ```
-  
+
 This ssh-key you also can use as Jenkins credential to connect Dockerhost as node
-   
+
+### Create known_hosts file for jenkins (copy from bohdan user, because it already SSHed into dockerhost)
+---
+
+- Login as jenkins user on jenkins server
+  ```bash
+  bohdan@jenkins:~$ sudo -i
+  root@jenkins:~# su jenkins
+  ```
+
+- Create known_hosts file for jenkins server
+  ```bash
+  jenkins@jenkins:~$ mkdir /var/lib/jenkins/.ssh
+  jenkins@jenkins:~$ touch /var/lib/jenkins/.ssh/known_hosts
+  ```
+
+- Copy known_hosts from user bohdan, because it already SSHed to Dockerhost 
+  ```bash
+  jenkins@jenkins:~$ exit
+  root@jenkins:~# cat /home/bohdan/.ssh/known_hosts >> /var/lib/jenkins/.ssh/known_hosts
+  ```
+
 ### Log in and configure Jenkins
 ---
 
@@ -367,11 +428,13 @@ When you open Jenkins (http://localhost:8080) first time you will be asked for i
    
    | Name | Kind | ID |
    |------|------|----|
-   | jenkins         | SSH Username with private key | docker_host_ssh|
-   | jenkins-master  | SSH Username with private key | ssh-github     |
-   | datadog_api_key | Secret text                   | docker_host_ssh|
-   | datadog_app_key | Secret text                   | docker_host_ssh|
+   | jenkins         | SSH Username with private key | docker_host_ssh |
+   | jenkins-master  | SSH Username with private key | ssh-github      |
+   | datadog_api_key | Secret text                   | datadog_api_key |
+   | datadog_app_key | Secret text                   | datadog_api_key |
 
+  - Go to http://localhost:8080/manage/configureSecurity/
+    - Set "Git Host Key Verification Configuration/Host key verification" to "Accept first connection"
 ### Connect Dockerhost as Jenkins node 
 ---
 Jenkins node is server where Jenkins will execute commands, in current project you will use Dockerhost as Jenkins node  
@@ -387,4 +450,22 @@ It will run docker containers and terraform
       - Host: 10.0.2.15 (Dockerhost ip)
       - Credentials: jenkins
       - Host Key Verification Strategy: Known hosts file
+  - There you can control new node: http://localhost:8080/manage/computer/terraform-docker/
+  - There you can see logs: http://localhost:8080/manage/computer/terraform-docker/log
 
+### Create jenkins pipeline
+---
+
+- Add new job 
+  - Go to http://localhost:8080/view/all/newJob
+    - Set name "python-website" and pick "Pipeline"
+    - Set "Pipeline/Definition" to "Pipeline script from SCM"
+      - SCM: Git
+      - Repository URL: git@github.com:qqwerty222/jenkins-datadog.git
+      - Credentials: jenkins-master
+      - Branch Specifier: */dev
+      - Script path: Jenkinsfile
+
+- Try to build manually
+  - Go to http://localhost:8080/job/python_website/
+  - Click "Build now"
