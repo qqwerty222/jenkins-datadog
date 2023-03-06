@@ -48,9 +48,17 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
 ##  Project implementation
 
 - [Terraform for Docker](#terraform-for-docker)
-   1. Docker images
-   2. Docker containers
-   3. Docker network
+   1. [Docker images](#docker-images)
+      - docker image resource
+      - website image module
+      - nginx image module
+      - datadog-agent image module
+   2. [Docker containers](#docker-containers)
+      - docker container resource
+      - website container module
+      - nginx container module
+      - datadog-agent container module
+   3. [Docker network](#docker-network)
    ---
 
 - Terraform for Datadog
@@ -62,11 +70,11 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
    6. Datadog Agent
    ---
   
-- Nginx
+- [Nginx](#nginx)
    1. Nginx configuration
    ---
 
-- Jenkins
+- [Jenkins](#jenkins)
    1. Jenkinsfile
 ---  
 
@@ -475,7 +483,7 @@ It will run docker containers and terraform
 
 ## Terraform for docker
 
-In this project In containers in run python website, nginx, datadog-agent and docker registry to store images for website container.
+I use containers to run python website, nginx, datadog-agent and docker registry that stores images for website container.
 
 ### Docker images:
 ---
@@ -499,11 +507,11 @@ In this project In containers in run python website, nginx, datadog-agent and do
   }
   ```
 
-  In current case i made build block dynamic, because only datadog-agent image is builded from Dockerfile. So it is not necessarly to put variables in build block.
+  In current case i made build block dynamic, because only datadog-agent image is builded from Dockerfile. And i don't need to fill build block for website of nginx images
 
   Meaning of all variables used here you can find in [documentation](https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image)
 
-  Current resource have only output for image id:
+  Current resource have only one output, for image id:
   ```hcl
   # terraform/modules/docker_images/outputs.tf
 
@@ -570,7 +578,7 @@ In this project In containers in run python website, nginx, datadog-agent and do
 ### Docker containers
 ---
 
-- Terraform docker conateiner resource
+- Terraform docker container resource
   ```hcl
   # terraform/modules/docker_container/main.tf
 
@@ -589,13 +597,13 @@ In this project In containers in run python website, nginx, datadog-agent and do
   ...
   ```
 
-  Docker container resource i use special variable count, it specify how many container will be started using this resource. In current case it is equal to variable container_count i specify in modules.
+  Docker container resource use special variable count, it specify how many containers will be started using this resource. It is equal to variable container_count i specified in modules.
 
-  To make module more clear, i generate name for the container automatically. You need to specify only one name, and no matter what count you specified, container names will be "name + number of the container".
+  To make module more clear, i generate name for the container automatically. You need to specify only one name, and no matter what count you specified, containers' names will be "name + number of the container".
 
   Meaning of all variables used here you can find in [documentation](https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container)
 
-  Network block is not dynamic because in my case i deploy one single custom network. But because of i deploy multiple number of containers, their ipv4 config generated automatically from 2 parameters.  
+  Network block is not dynamic because i deploy one single custom network. But i deploy multiple number of containers, so their ipv4 config generated automatically from 2 parameters.  
   subnet - include first 3 numbers of ipv4 with dot in the end.  
   start_from - ip of each new container is ip of the previous container + 1.  
   start_from specify which ip will have first container.
@@ -623,7 +631,9 @@ In this project In containers in run python website, nginx, datadog-agent and do
   ...
   ```
 
-  Blocks ports, upload and volumes are dynamic, to be able add multiple volumes or ports to one container, or don't specify files to upload for each container
+  Blocks ports, upload and volumes are dynamic, to be able add multiple volumes or ports to one container, or don't specify files to upload for each container  
+
+  Each block get list from module, and search for values for their indexes.
 
   ```hcl
   # terraform/modules/docker_container/main.tf
@@ -676,7 +686,281 @@ In this project In containers in run python website, nginx, datadog-agent and do
   }
   ```
 
-  Each block get list from module, and search for values for their indexes.
+  Also to get full list of names and ips i use outputs
+  ```
+  # terraform/modules/docker/docker_container/outputs.tf
+  output "ipv4_addresses" {
+    value = [
+        for x in docker_container.common[*].network_data[0]["ip_address"]: "${x}"
+    ]
+    description = "Output a list of created containers' names"
+  }
 
-  - Terraform docker conateiner resource
+  output "container_names" {
+      value = [
+          for name in docker_container.common[*].name: "${name}"
+      ]
+      description = "Output a list of created containers' names"
+  }
+  ```
+
+- Terraform website container module
+  
+  Website container needs volumes to bind logs with /srv dir on Dockerhost.  
+  Port 8000, is standart port for gunicorn wsgi, thing that handle http requests from nginx.
+  To start website app in docker container i use entrypoint with gunicorn command that starts python code.
+  Container count is specified by environment variable you can find in "/terraform/live/variables.tf" and Jenkinsfile. 
+  ```tf
+  # terraform/modules/docker_container/main.tf
+
+  module "website_node" {
+      source = "../modules/docker/docker_container"
+      
+      name            = "website_node"
+      docker_image    = module.website_image.id
+      container_count = var.WEBSITE_NODE_COUNT
+      
+      network = { 
+          name        = "website_net", 
+          subnet      = "172.1.1.", 
+          start_from  = 10
+      }
+      ports   = [ [8000, null] ]
+
+      volumes = [ 
+          # [ "/host_path", "/container_path" ]
+          ["/srv/website_logs/gunicorn/access.log", "/usr/src/app/log/access.log"],
+          ["/srv/website_logs/gunicorn/error.log",  "/usr/src/app/log/error.log"]
+      ]
+
+      entrypoint  = [
+          "gunicorn",  
+              "--bind",           "0.0.0.0:8000", 
+              "--error-logfile",  "log/error.log",
+              "--access-logfile", "log/access.log",
+          "wsgi:app"
+      ]
+
+      depends_on = [ module.website_net ]
+  }
+  
+- Terraform nginx container module
+  
+  Nginx container also uses volumes to bind logs to /srv on Dockerhost   
+  Also you can see upload block, it specify file to upload in container before start  
+  I use it to upload rendered nginx.conf template using terraform variables
+  ```
+  # terraform/modules/docker_container/main.tf
+
+  module "nginx_node" {
+      source = "../modules/docker/docker_container"
+
+      name            = "nginx_node"
+      docker_image    = module.nginx_image.id
+
+      network = { 
+          name        = "website_net", 
+          subnet      = "172.1.1.", 
+          start_from  = 5
+      }
+      ports   = [ [80, 80] ]
+
+      upload  = [[ "/etc/nginx/nginx.conf", 
+                  templatefile("conf/nginx_conf.tpl", {
+                      website_addresses = module.website_node.ipv4_addresses
+                  })
+      ]]
+
+      volumes = [
+          # [ "/host_path", "/container_path" ]
+          # ["${path.cwd}/conf/nginx.conf", "/etc/nginx/nginx.conf"],
+          ["/srv/website_logs/nginx/access.log", "/var/log/nginx/access.log"],
+          ["/srv/website_logs/nginx/error.log",  "/var/log/nginx/error.log"]
+      ]
+
+      depends_on = [ module.website_net ]
+  }
+  ```
+
+- Terraform datadog-agent container module
+  
+  Datadog-agent uses volumes to get logs from Dockerhost, parameter true means that they are read-only  
+  Also you can see a lot of env_vars, WEBSITE_COUNT is used in datadog custom_checks, another vars is just datadog connection parameters, they are taken from "/terraform/live/variables.tf"
+  ```
+  # terraform/modules/docker_container/main.tf
+
+  module "datadog_node" {
+    source = "../modules/docker/docker_container"
+
+    name            = "datadog_node"
+    docker_image    = module.datadog_image.id
+
+    network = { 
+        name        = "website_net", 
+        subnet      = "172.1.1.", 
+        start_from  = 6 
+    }
+
+    volumes = [
+        # [ "/host_path", "/container_path", "read_only(default:false)" ]
+        ["/var/run/docker.sock", "/var/run/docker.sock", true],
+        ["/sys/fs/cgroup/", "/host/sys/fs/cgroup", true],
+        ["/proc/", "/host/proc/", true],
+    ]  
+
+    env_vars        = [
+        "WEBSITE_COUNT=${var.WEBSITE_NODE_COUNT}",
+        "DD_API_KEY=${var.DATADOG_API_KEY}",
+        "DD_HOSTNAME=docker_agent",
+        "DD_SITE=datadoghq.eu",
+        "DD_TAGS=env:dev "
+    ]  
+
+    depends_on = [ module.website_net ]
+  }
+
+### Docker network
+---
+
+- Terraform docker network resource    
+  All network configuration is list with 3 parameters and variable that specify name  
+  Another parameters you can find in [documentation](https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/network)
+  ```tf
+  # terraform/modules/docker_network/main.tf
+
+  resource "docker_network" "common" {
+    name = var.network_name
+
+    driver = "bridge"
+
+    dynamic ipam_config {
+        for_each = var.ipam_config
+        content {
+            subnet   = ipam_config.value[0]
+            ip_range = ipam_config.value[1] 
+            gateway  = ipam_config.value[2]
+        }
+    }
+  }
+  ```
+
+  Variables for network configuration with description:
+  ```
+  # terraform/modules/docker_network/main.tf
+
+  variable "network_name" {
+    type        = string
+    default     = null
+    description = "Name of network to create"
+  }
+
+  variable "ipam_config" {
+      type        = list
+      default     = null
+      description = " | ipam_config = [ subnet/16, ip_range/24, gateway.254 ]"
+  }
+  ```
+
+- Terraform network module
+  ```
+  # terraform/modules/docker_network/main.tf
+
+  module "website_net" {
+    source = "../modules/docker/docker_network"
+
+    network_name = "website_net"
+
+    ipam_config  = [ 
+        # [ subnet, ip_range, gateway ]
+        [ "172.1.0.0/16", "172.1.1.0/24", "172.1.1.254"]
+    ]
+  }
+  ```
+
+## Nginx
+---
+
+### Nginx configuration
+
+Nginx is running in docker container, in website_net docker network. Configuration file you can find in "terraform/live/conf/nginx_conf.tpl"
+
+- Upstream block
+  
+  There is a list of ip addresses of website containers to which nginx will redirect requests.  
+  But count of container is dynamic, in one environment it can be 3 in another 7, to update nginx config automatically i use terraform templates.  
+  Below you can see for loop that generate string from list "website_addresses"  
+
+  ```nginx
+  # terraform/live/conf/nginx_conf.tpl
+
+  http {
+      upstream websites {
+          %{ for address in website_addresses ~}
+          server ${address}:8000;
+          %{endfor ~}
+      }
+  ```
+
+  Below you can see static nginx upstream config for 3 website containers. 
+  ```nginx
+  http {
+    upstream websites {
+	    server 172.1.1.10:8000;
+	    server 172.1.1.11:8000;
+	    server 172.1.1.12:8000;
+    }
+  ```
+
+  It is part of the nginx container module, where i specify templatefile and list to to use in render
+  ```
+  # terraform/live/project_docker.tf
+
+      upload  = [[ "/etc/nginx/nginx.conf", 
+                templatefile("conf/nginx_conf.tpl", {
+                    website_addresses = module.website_node.ipv4_addresses
+                })
+    ]]
+  ```
+
+- Log format block
+  There i change log output, because i use upstream and want to see ip address of website container that handled request
+  ```nginx
+  # terraform/live/conf/nginx_conf.tpl
+
+      log_format upstream     '[$time_local] $remote_addr $upstream_addr '  
+                  '"$request" $status $body_bytes_sent '
+                  '"$http_user_agent"';
+  ```
+  It is how new log entry looks like: [17/Feb/2023:15:27:03 +0000] 10.0.2.10 172.1.1.10:8000 "GET / HTTP/1.1" 200 336 "curl/7.81.0"
+
+- Server block  
+  This block specifies what port to listen, where save the logs, and what header send to website container.
+  proxy_pass specifies to which address redirect requests, but in this case i don't specify ip address, i specify name of the upstream group
+  ```nginx
+  # terraform/live/conf/nginx_conf.tpl
+  
+      server{
+          listen      80;
+          server_name localhost;
+          access_log /var/log/nginx/access.log upstream;
+          error_log  /var/log/nginx/error.log;
+          location / {
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_set_header Host $http_host;
+                  proxy_pass http://websites;
+          }
+      }
+  }
+  ```
+
+## Jenkins
+---
+
+### Jenkinsfile  
+File that include all pipeline steps 
+
+- Jenkinsfile
+
+
 
