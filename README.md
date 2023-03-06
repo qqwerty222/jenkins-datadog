@@ -22,21 +22,21 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
 - WSL - as control terminal
 
 *** 
-## Steps to reproduce:
+## Guide to reproduce:
 
--  Prepare environment:
+-  [Prepare environment](#prepare-environment):
    1. Set up NAT network in VirtualBox 
    2. SSH into Virtual Machines
    3. Generate and use ssh-keys
    ---
   
-- Configure Dockerhost
+- [Configure Dockerhost](#configure-dockerhost)
    1. Install Docker
    2. Create user for Jenkins 
    3. Prepare directories for website logs and terraform state
    ---
 
-- Configure Jenkins server
+- [Configure Jenkins server](#configure-jenkins-server)
    1. Install Jenkins  
    2. SSH to jenkins user on Dockerhost
    3. Log in and configure Jenkins
@@ -44,7 +44,10 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
    5. Create jenkins pipeline
    ---
   
-- Terraform for Docker
+***
+##  Project implementation
+
+- [Terraform for Docker](#terraform-for-docker)
    1. Docker images
    2. Docker containers
    3. Docker network
@@ -64,21 +67,18 @@ Implement CI/CD pipeline, to test, deploy and monitor some application
    ---
 
 - Jenkins
-   1. Set up Pipeline job
-   2. Jenkinsfile
+   1. Jenkinsfile
 ---  
 
 # Guide to reproduce  
 
-***
-## Set up NAT network in VirtualBox 
+## Prepare environment
 
-
-NAT network means that VirtualBox creates dedicated network for your VMs, but with your host as gateway.  
-To redirect ssh connections to one of VMs set up port forwarding in your NAT network
-
-### Port forwarding scheme:
+### Set up NAT network in VirtualBox 
 ---
+NAT network means that VirtualBox creates dedicated network for your VMs, but with your host as gateway. To redirect ssh connections to one of VMs set up port forwarding in your NAT network
+
+Port forwarding scheme:
 | Name            | Protocol   | Host IP | Host Port | Guest IP  | Guest Port |
 |-----------------|------------|---------|-----------|-----------|------------|
 | DockerH-ssh     | TCP        |         | 2222      | 10.0.2.15 | 22         |
@@ -210,11 +210,6 @@ https://docs.docker.com/engine/install/ubuntu/
   bohdan@dockerhost:~$ su $USER
   ```
 
-- Also install java, because jenkins will run Dockerhost as agent
-  ```bash
-  bohdan@dockerhost:~$ sudo apt install openjdk-11-jre
-  ```
-
 ### Run docker registry
 ---
 
@@ -288,6 +283,11 @@ https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
    ```
 
 - Also you will need to gen and add public ssh-key into /home/jenkins/.ssh/authorized-keys (you can not log in using pass, only ssh-key)  
+
+- And install java, because jenkins will run Dockerhost as agent
+  ```bash
+  bohdan@dockerhost:~$ sudo apt install openjdk-11-jre
+  ```
 
 ### Prepare directories for website logs and terraform state
 ---
@@ -469,3 +469,214 @@ It will run docker containers and terraform
 - Try to build manually
   - Go to http://localhost:8080/job/python_website/
   - Click "Build now"
+
+***
+# Project implementanion
+
+## Terraform for docker
+
+In this project In containers in run python website, nginx, datadog-agent and docker registry to store images for website container.
+
+### Docker images:
+---
+
+- Terraform docker image resource 
+  ```hcl
+  # terraform/modules/docker_images/main.tf
+
+  resource "docker_image" "common" {
+    name = var.image_name
+
+    dynamic "build" { 
+        for_each = var.build
+        content {
+            context = build.value["context"]
+            tag     = build.value["tag"]
+        }
+    }
+
+    keep_locally = var.keep_locally
+  }
+  ```
+
+  In current case i made build block dynamic, because only datadog-agent image is builded from Dockerfile. So it is not necessarly to put variables in build block.
+
+  Meaning of all variables used here you can find in [documentation](https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image)
+
+  Current resource have only output for image id:
+  ```hcl
+  # terraform/modules/docker_images/outputs.tf
+
+  output "id" {
+    value       = docker_image.common.image_id
+    description = "Docker image ID"
+  }
+  ```
+
+- Terraform website image module
+  ```hcl
+  # terraform/live/project_docker.tf
+
+  module "website_image" {
+    source = "../modules/docker/docker_images"
+    
+    image_name = "localhost:5005/website"
+  }
+  ```
+
+  Image for website is builded by Jenkins job, and if pytest was successfull send it to docker registry, from where terraform take latest uploaded image.
+
+- Terraform nginx image module
+  ```hcl
+  # terraform/live/project_docker.tf
+
+  module "nginx_image" {
+    source = "../modules/docker/docker_images"
+
+    image_name   = "nginx:1.22"
+    keep_locally = true
+  }
+  ```
+
+  Image for nginx is downloaded from public docker source, and in this case i live keep_locally=true because there is no need to redownload it every time.
+
+- Terraform datadog_image module
+  ```hcl
+  # terraform/live/project_docker.tf
+
+  module "datadog_image" {
+    source = "../modules/docker/docker_images"
+
+    image_name   = "datadog"
+    build        = [{ context = "../modules/datadog", tag=["dd:test"] }]
+    
+    keep_locally = false
+  } 
+  ```
+
+  This image is builded from local Dockerfile, reason of this is datadog custom checks, config files of which must be located in datadog agent. Also one of checks needs ip util to work, so Dockerfile incude RUN command to install it
+
+  ```hcl
+  # terraform/modules/datadog/Dockerfile
+
+  FROM gcr.io/datadoghq/agent:7
+
+  RUN apt-get update && apt-get install iputils-ping && apt-get autoremove
+
+  COPY dd_custom_checks/conf.d/. /etc/datadog-agent/conf.d/
+  COPY dd_custom_checks/checks.d/. /etc/datadog-agent/checks.d/
+  ```
+
+### Docker containers
+---
+
+- Terraform docker conateiner resource
+  ```hcl
+  # terraform/modules/docker_container/main.tf
+
+  resource "docker_container" "common" {
+    count     = var.container_count
+
+    name       = "${var.name}${count.index + 1}"
+    image      = var.docker_image
+
+    tty        = var.tty
+    attach     = var.attach 
+    stdin_open = var.stdin_open
+    command    = var.commands
+    entrypoint = var.entrypoint
+    env        = var.env_vars
+  ...
+  ```
+
+  Docker container resource i use special variable count, it specify how many container will be started using this resource. In current case it is equal to variable container_count i specify in modules.
+
+  To make module more clear, i generate name for the container automatically. You need to specify only one name, and no matter what count you specified, container names will be "name + number of the container".
+
+  Meaning of all variables used here you can find in [documentation](https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container)
+
+  Network block is not dynamic because in my case i deploy one single custom network. But because of i deploy multiple number of containers, their ipv4 config generated automatically from 2 parameters.  
+  subnet - include first 3 numbers of ipv4 with dot in the end.  
+  start_from - ip of each new container is ip of the previous container + 1.  
+  start_from specify which ip will have first container.
+
+  ```hcl
+  # terraform/modules/docker_container/main.tf
+  ...    
+      networks_advanced {
+        name         = var.network["name"]
+        ipv4_address = "${var.network["subnet"]}${var.network["start_from"] + count.index}"
+    }
+  ...
+
+  # terraform/modules/docker_container/variables.tf
+  ...
+    variable "network" {
+        type = object({
+            name            = string
+            subnet          = string
+            start_from      = number
+        })
+        default = null
+        description = "Set custom network | network = { name='net_1', ipv4_subnet='1.1.1.', ip_started_from='10' }"
+    }
+  ...
+  ```
+
+  Blocks ports, upload and volumes are dynamic, to be able add multiple volumes or ports to one container, or don't specify files to upload for each container
+
+  ```hcl
+  # terraform/modules/docker_container/main.tf
+  ...
+    dynamic "ports" {
+      for_each = var.ports
+      content {
+        internal = ports.value[0]
+        external = ports.value[1]
+        # protocol = ports.value[2]
+      }
+    }
+
+    dynamic "upload" {
+      for_each = var.upload
+      content {
+        file    = upload.value[0]
+        content = upload.value[1]
+      }
+    }
+
+    dynamic "volumes" {
+      for_each = var.volumes
+      content {
+        host_path      = volumes.value[0]
+        container_path = volumes.value[1]
+        read_only      = try(volumes.value[2], false)
+      }
+    }
+  }
+
+  # terraform/modules/docker_container/main.tf
+
+  variable "ports" {
+      type        = list
+      default     = []
+      description = "Internal/External ports to expose | [ 22, 2222 ]"
+  }
+
+  variable "upload" {
+      type    = list
+      default = []
+      description = "File to upload before start of the container | [ '/container_path', 'content_of_the_file' ]"
+  }
+
+  variable "volumes" {
+      type        = list
+      default     = []
+      description = "Volumes to create | [ '/host_path', '/container_path' ] "
+  }
+  ```
+
+  Each block get list from module, and search for values for their indexes.
+
+  - Terraform docker conateiner resource
+
