@@ -960,7 +960,148 @@ Nginx is running in docker container, in website_net docker network. Configurati
 ### Jenkinsfile  
 File that include all pipeline steps 
 
-- Jenkinsfile
+- Prebuild stage  
+  There i set agent that will execute job steps ('terraform_docker')  
+  Add cron trigger to check updates in git repository each minute  
+  And set environment variables that will be used by terraform code and datadog agent  
+
+  ```Jenkinsfile
+  # Jenkinsfile
+
+  pipeline {
+
+    agent {label 'terraform_docker'}
+    triggers { pollSCM('* * * * *') }
+    environment {
+        DATADOG_API_KEY = credentials('datadog_api_key')
+        DATADOG_APP_KEY = credentials('datadog_app_key')
+        TF_VAR_DATADOG_API_KEY = credentials('datadog_api_key')
+        TF_VAR_WEBSITE_NODE_COUNT = 4
+    }
+  ...
+  ```
+
+- Prepare codebase stage  
+  First step clear previous project folder that Jenkins create each build  
+  Next clone repository from branch /dev, using ssh-key saved in Jenkins credentials
+
+  ```Jenkinsfile
+  # Jenkinsfile
+
+  ...
+      stages { 
+        stage('Prepare Codebase'){
+            steps{
+                cleanWs()
+                checkout scm: [$class: 'GitSCM', branches: [[name: '*/dev']], userRemoteConfigs: 
+                [[credentialsId: 'ssh-github', url: 'git@github.com:qqwerty222/jenkins-project.git' ]]]
+            }
+        }
+  ...
+  ```
+ 
+- Tests stage  
+  In this stage i execute shell commands to build image from Dockerfile in test_website dir  
+  Create container and run pytest in it, result file will be mounted in current project dir     
+  catchError means that even if pytest failed, next step will be invoked anyway
+  ```Jenkinsfile
+  # Jenkinsfile
+
+  ...
+        stage('Run tests'){
+            steps{
+                catchError {
+                    sh "docker build -t website:v${env.BUILD_NUMBER} test_website/."
+                    sh "docker run --name website_v${env.BUILD_NUMBER} -i -v ${WORKSPACE}/test_website/junit_results.xml:/junit_results.xml website:v${env.BUILD_NUMBER} python -m pytest --junit-xml=/junit_results.xml"
+                } 
+            }
+        }
+  ...
+  ```
+
+- Get test result  
+  In this step Junit save results of the pytest  
+  If pytest was failed set status "FAILED" to the build with error "Pytest failed" and stop it, if pytest Ok Jenkins will run next stages 
+
+  ```
+  # Jenkinsfile
+
+  ...
+        stage('Get test result') {
+            steps{
+                catchError(buildResult: 'FAILURE'){
+                    archiveArtifacts artifacts: 'test_website/junit_results.xml'
+                    junit 'test_website/junit_results.xml'
+                }
+                
+                script {
+                    if (currentBuild.currentResult == "FAILURE")
+                        error 'Pytest failed'
+                }
+            }
+        } 
+  ...
+  ```
+
+- Push image  
+  This stages invokes only if pytest was succesfull  
+  There using shell commands image builded in 'Run Tests' stage will be sended to docker registry
+
+  ```Jenkinsfile
+  # Jenkinsfile
+  ...
+        stage('Push image'){
+            steps{
+                sh "docker image tag website:v${env.BUILD_NUMBER} localhost:5005/website"
+                sh "docker push localhost:5005/website"
+            }
+        }
+  ...
+  ```
+
+- Update website  
+  This stage add entry to logs with build number  
+  After change directory to terraform/live and init terraform  
+  Next destroy previous infrastructure and create new
+
+  ```Jenkinsfile
+  # Jenkinsfile
+
+  ...
+        stage('Update website'){
+            steps {
+                // left label in logs, to understand by what build they were created
+                sh "echo '#-----build${env.BUILD_NUMBER}-----#' >> /srv/website_logs/gunicorn/access.log"
+                sh "echo '#-----build${env.BUILD_NUMBER}-----#' >> /srv/website_logs/gunicorn/error.log"
+                sh "echo '#-----build${env.BUILD_NUMBER}-----#' >> /srv/website_logs/nginx/access.log"
+                sh "echo '#-----build${env.BUILD_NUMBER}-----#' >> /srv/website_logs/nginx/error.log"
+
+                dir('terraform/live') {
+                    sh 'terraform init'
+                    sh 'terraform destroy -auto-approve'
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+    }
+  ...
+  ```
+
+- Postbuild stage  
+  Thist stage invokes always, it delete previously created docker image and container where pytest runned
+  ```Jenkinsfile
+  # Jenkinsfile 
+
+  ...
+      post {
+          always {
+              sh "docker rm  website_v${env.BUILD_NUMBER}"
+              sh "docker rmi website:v${env.BUILD_NUMBER}"
+          }
+      }
+  }
+  ```
+
 
 
 
