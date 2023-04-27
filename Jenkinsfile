@@ -1,6 +1,6 @@
 pipeline {
 
-    agent {label 'terraform_docker'}
+    agent {label 'terraform'}
     triggers { pollSCM('* * * * *') }
     environment {
         DATADOG_API_KEY = credentials('datadog_api_key')
